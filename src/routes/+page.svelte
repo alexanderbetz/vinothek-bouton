@@ -182,7 +182,7 @@
           <div class="mb-10">
             <button
               class="cursor-pointer mx-auto rounded-md bg-primary px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              on:click={() => { answers = []; }}>
+              on:click={() => { answers = []; searchText = '' }}>
               Neue Frage stellen
             </button>
           </div>
