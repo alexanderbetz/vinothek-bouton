@@ -29,11 +29,23 @@
 
     isSearching = true
     setTimeout(() => showTimeHint = true, 2000)
-    const response = await fetch('/api/ask', { method: 'POST', body: JSON.stringify({ q: searchText }) })
+    const response = await _search(searchText)
     isSearching = false
     showTimeHint = false
-    answers = (await response.json()).reverse()
+    answers = response.reverse()
     console.log(answers)
+  }
+
+  async function _search(searchText: string) {
+    let response = await fetch('/api/ask', { method: 'POST', body: JSON.stringify({ q: searchText }) })
+    const { threadId, runId } = await response.json()
+
+    // Polling because of Vercel request timeouts after 10s
+    do {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      response = await fetch('/api/answer?' + ['threadId='+threadId, 'runId='+runId].join('&'))
+    } while (response.status === 202)
+    return await response.json()
   }
 
   $: hideTypeWriter = Boolean(searchText).valueOf() || isTyping
@@ -169,7 +181,7 @@
 
           <div class="mb-10">
             <button
-              class="mx-auto rounded-md bg-primary px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              class="cursor-pointer mx-auto rounded-md bg-primary px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               on:click={() => { answers = []; }}>
               Neue Frage stellen
             </button>
