@@ -1,7 +1,9 @@
 <script lang="ts">
   import type { ThreadMessage } from 'openai/resources/beta/threads'
   import Typewriter from 'svelte-typewriter'
+  import type { PageData } from './$types'
 
+  export let data: PageData
   let searchText = ''
   let isTyping = false
   let isSearching = false
@@ -43,7 +45,7 @@
     // Polling because of Vercel request timeouts after 10s
     do {
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      response = await fetch('/api/answer?' + ['threadId='+threadId, 'runId='+runId].join('&'))
+      response = await fetch('/api/answer?' + ['threadId=' + threadId, 'runId=' + runId].join('&'))
     } while (response.status === 202)
     return await response.json()
   }
@@ -82,13 +84,15 @@
             </button>
 
             <!-- type writer on desktop -->
-            <div class="hidden md:block absolute left-8 top-4 pointer-events-none h-[48px] overflow-hidden w-[calc(100%_-_100px)]">
-              <Typewriter mode="loopRandom" delay={1000} interval={50} bind:disabled={hideTypeWriter}>
-                {#each preDefinedPrompts as prompt}
-                  <p class="text-[32px] text-gray-500 whitespace-nowrap">{prompt}</p>
-                {/each}
-              </Typewriter>
-            </div>
+            {#if !data.isFirefox}
+              <div class="hidden md:block absolute left-8 top-4 pointer-events-none h-[48px] overflow-hidden w-[calc(100%_-_100px)]">
+                <Typewriter mode="loopRandom" delay={1000} interval={50} bind:disabled={hideTypeWriter}>
+                  {#each preDefinedPrompts as prompt}
+                    <p class="text-[32px] text-gray-500 whitespace-nowrap">{prompt}</p>
+                  {/each}
+                </Typewriter>
+              </div>
+            {/if}
 
             <input
               type="text"
@@ -100,6 +104,7 @@
             <input
               type="text"
               class="hidden md:block h-[80px] w-full rounded-full border-2 outline-none px-8 text-[32px] shadow-[0px_0px_50px_0px_rgba(0,0,0,0.10)]"
+              placeholder={data.isFirefox ? 'Stelle Eric eine Frage...' : ''}
               bind:value={searchText}
               readonly={isSearching}
               on:click={() => isTyping = true}
@@ -172,9 +177,13 @@
               <p class="text-center">"{message.content[0].text.value}"</p>
             {:else}
               <p class="font-bold">Eric antwortet: </p>
-              <Typewriter mode="cascade" delay={500}>
+              {#if data.isFirefox}
                 <p class="whitespace-pre-line">{message.content[0].text.value}</p>
-              </Typewriter>
+              {:else}
+                <Typewriter mode="cascade" delay={500}>
+                  <p class="whitespace-pre-line">{message.content[0].text.value}</p>
+                </Typewriter>
+              {/if}
             {/if}
             <div class="mb-4"></div>
           {/each}
